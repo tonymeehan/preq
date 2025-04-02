@@ -28,7 +28,7 @@ const (
 	tlsPort    = 8080
 	udpPort    = 8081
 	defStop    = "+inf"
-	baseAddr   = "api-dev.prequel.dev"
+	baseAddr   = "api-beta.prequel.dev"
 	configFile = "config.yaml"
 )
 
@@ -112,6 +112,12 @@ func main() {
 
 	kong.Parse(&cli)
 
+	// Initialize logger first before any other logging
+	logs.InitLogger(
+		logs.WithLevel(cli.Level),
+		logs.WithPretty(),
+	)
+
 	switch {
 	case cli.Version:
 
@@ -128,11 +134,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	logs.InitLogger(
-		logs.WithLevel(cli.Level),
-		logs.WithPretty(),
-	)
-
 	if c, err = config.LoadConfig(defaultConfigDir, configFile); err != nil {
 		log.Error().Err(err).Msg("Failed to load config")
 		ux.ConfigError(err)
@@ -140,7 +141,7 @@ func main() {
 	}
 
 	// Log in for community rule updates
-	if token, err = auth.Login(ctx, ruleToken); err != nil {
+	if token, err = auth.Login(ctx, baseAddr, ruleToken); err != nil {
 		log.Error().Err(err).Msg("Failed to login")
 
 		// A notice will be printed if the email is not verified

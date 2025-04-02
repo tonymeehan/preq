@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	baseUrl          = "https://api-dev.prequel.dev:8080"
 	ruleToken        = ".ruletoken"
 	retries          = uint(1)
 	delay            = time.Millisecond * 100
@@ -440,12 +439,13 @@ func checkLocalToken(path string) (string, error) {
 	return validatedToken.Raw, nil
 }
 
-func Login(ctx context.Context, tokenPath string) (string, error) {
+func Login(ctx context.Context, baseAddr, tokenPath string) (string, error) {
 
 	var (
 		deviceAuth *DeviceAuth
 		cmd        *exec.Cmd
 		uri        *url.URL
+		apiUri     = fmt.Sprintf("https://%s:8080", baseAddr)
 		err        error
 	)
 
@@ -453,7 +453,7 @@ func Login(ctx context.Context, tokenPath string) (string, error) {
 		return token, nil
 	}
 
-	if deviceAuth, err = startAuth(ctx, fmt.Sprintf("%s/v1/auth/rules", baseUrl)); err != nil {
+	if deviceAuth, err = startAuth(ctx, fmt.Sprintf("%s/v1/auth/rules", apiUri)); err != nil {
 		log.Error().Err(err).Msg("Failed to start device auth")
 		return "", err
 	}
@@ -488,7 +488,7 @@ func Login(ctx context.Context, tokenPath string) (string, error) {
 		return "", ErrInvalidDeviceAuth
 	}
 
-	tokenPollResponse, err := pollToken(ctx, baseUrl, deviceAuth)
+	tokenPollResponse, err := pollToken(ctx, apiUri, deviceAuth)
 	if err != nil {
 		log.Error().Err(err).Msg("Fail pollToken")
 		return "", err
@@ -499,7 +499,7 @@ func Login(ctx context.Context, tokenPath string) (string, error) {
 		return "", ErrInvalidDeviceAuth
 	}
 
-	token, err := exchangeRulesToken(ctx, baseUrl, tokenPollResponse)
+	token, err := exchangeRulesToken(ctx, apiUri, tokenPollResponse)
 	if err != nil {
 		log.Error().Err(err).Msg("Fail exchangeForApiToken")
 		return "", err
