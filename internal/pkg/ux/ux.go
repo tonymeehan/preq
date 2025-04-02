@@ -31,7 +31,7 @@ const (
 const (
 	versionTmpl        = "%s %s %s %s/%s %s\n%s\n\n"
 	rulesVersionTmpl   = "Current rules release: %s %s"
-	lineRefer          = "Learn more at https://github.com/prequel-dev/prequel"
+	lineRefer          = "Learn more at https://docs.prequel.dev"
 	lineCopyright      = "Copyright 2025 Prequel Software, Inc. (https://prequel.dev)"
 	emailVerifyTitle   = "\nYou're one step away! Please verify your email\n"
 	emailVerifyBodyFmt = "It looks like your email (%s) has not been verified yet. Check your inbox for a verification link from "
@@ -54,7 +54,12 @@ type UxFactoryI interface {
 }
 
 func PrintVersion(configDir, currRulesPath string, currRulesVer *semver.Version) {
-	rulesOutput := fmt.Sprintf(rulesVersionTmpl, currRulesVer.String(), currRulesPath)
+	var rulesOutput string
+	if currRulesVer == nil {
+		rulesOutput = "No rules installed"
+	} else {
+		rulesOutput = fmt.Sprintf(rulesVersionTmpl, currRulesVer.String(), currRulesPath)
+	}
 	fmt.Printf(versionTmpl, AppName, verz.Semver(), verz.Githash, runtime.GOOS, runtime.GOARCH, verz.Date, rulesOutput)
 	fmt.Println(lineRefer)
 	fmt.Println(lineCopyright)

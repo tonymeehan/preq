@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
@@ -12,7 +11,6 @@ import (
 	"math"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -58,71 +56,7 @@ func ParseTime(tstr, def string) (ts int64, err error) {
 }
 
 func GetOSInfo() string {
-	switch runtime.GOOS {
-	case "darwin":
-		return getMacOSInfo()
-	case "linux":
-		return getLinuxOSInfo()
-	default:
-		return fmt.Sprintf("%s/unknown", runtime.GOOS)
-	}
-}
-
-func getMacOSInfo() string {
-	out, err := exec.Command("sw_vers", "-productName").Output()
-	if err != nil {
-		return "macOS/unknown"
-	}
-	productName := strings.TrimSpace(string(out))
-
-	out, err = exec.Command("sw_vers", "-productVersion").Output()
-	if err != nil {
-		return fmt.Sprintf("macOS/%s", productName)
-	}
-	productVersion := strings.TrimSpace(string(out))
-
-	return fmt.Sprintf("%s/%s", productName, productVersion)
-}
-
-func getLinuxOSInfo() string {
-	f, err := os.Open("/etc/os-release")
-	if err != nil {
-		return fmt.Sprintf("Linux/%s", getKernelVersion())
-	}
-	defer f.Close()
-
-	var name, version string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		switch {
-		case strings.HasPrefix(line, "NAME="):
-			name = parseOSReleaseValue(line)
-		case strings.HasPrefix(line, "VERSION="):
-			version = parseOSReleaseValue(line)
-		case strings.HasPrefix(line, "PRETTY_NAME="):
-			// Some distros only fill PRETTY_NAME, which might look like "Ubuntu 20.04.5 LTS"
-			pretty := parseOSReleaseValue(line)
-			if name == "" || version == "" {
-				// If we haven't set name or version yet, we could use PRETTY_NAME directly
-				// For example, treat everything as the name, leaving version blank (or parse further).
-				name = pretty
-			}
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return fmt.Sprintf("Linux/%s", getKernelVersion())
-	}
-
-	if name == "" {
-		name = "Linux"
-	}
-	if version == "" {
-		version = getKernelVersion()
-	}
-
-	return fmt.Sprintf("%s/%s", name, version)
+	return fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 }
 
 func OpenRulesFile(filePath string) (io.Reader, func(), error) {
@@ -319,27 +253,6 @@ func GunzipBytes(path string) ([]byte, error) {
 	}
 
 	return decompressed.Bytes(), nil
-}
-
-// parseOSReleaseValue extracts the value part from lines like NAME="Ubuntu"
-func parseOSReleaseValue(line string) string {
-	parts := strings.SplitN(line, "=", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	v := strings.TrimSpace(parts[1])
-	// Remove surrounding quotes if present
-	v = strings.Trim(v, `"`)
-	return v
-}
-
-// getKernelVersion calls `uname -r` to retrieve the Linux kernel version
-func getKernelVersion() string {
-	out, err := exec.Command("uname", "-r").Output()
-	if err != nil {
-		return "unknown"
-	}
-	return strings.TrimSpace(string(out))
 }
 
 func Sha256Sum(data []byte) string {
