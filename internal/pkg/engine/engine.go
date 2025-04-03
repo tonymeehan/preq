@@ -28,6 +28,8 @@ import (
 
 type LogData = resolve.LogData
 
+const ramLimit = 512 << 20 // 512 MiB
+
 var (
 	ErrRuleNotFound      = errors.New("rule not found")
 	ErrUnknownObjectType = errors.New("unknown object type")
@@ -656,7 +658,7 @@ func _spinLogs(ld *LogData, scanF scanner.ScanFuncT, stop int64, tracker *progre
 		var reorder *scanner.ReorderT
 		if rd.Window() > 0 {
 			var err error
-			if reorder, err = scanner.NewReorder(rd.Window(), scanF); err != nil {
+			if reorder, err = scanner.NewReorder(rd.Window(), scanF, scanner.WithMemoryLimit(ramLimit)); err != nil {
 				log.Warn().Err(err).Msg("Fail to create reorder object. Continue...")
 			} else {
 				scanF = reorder.Append
