@@ -216,7 +216,12 @@ func (r *ReportT) PrintReport() error {
 	return nil
 }
 
-// assumes lock is already held
+func (r *ReportT) CreateReport() (any, error) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
+	return r.createReport()
+}
+
 func (r *ReportT) createReport() (any, error) {
 	var (
 		out = make([]map[string]any, 0)
