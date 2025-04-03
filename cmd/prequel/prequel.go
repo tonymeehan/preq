@@ -25,11 +25,12 @@ import (
 )
 
 const (
-	tlsPort    = 8080
-	udpPort    = 8081
-	defStop    = "+inf"
-	baseAddr   = "api-beta.prequel.dev"
-	configFile = "config.yaml"
+	tlsPort      = 8080
+	udpPort      = 8081
+	defStop      = "+inf"
+	baseAddr     = "api-beta.prequel.dev"
+	configFile   = "config.yaml"
+	stdoutReport = "-"
 )
 
 var (
@@ -44,7 +45,6 @@ var cli struct {
 	JsonLogs      bool   `short:"j" help:"Print logs in JSON format to stderr" default:"false"`
 	Level         string `short:"l" help:"Print logs at this level to stderr"`
 	ReportFile    string `short:"n" help:"Report filename"`
-	NoReport      bool   `short:"N" help:"Do not write a report"`
 	Quiet         bool   `short:"q" help:"Quiet mode, do not print progress"`
 	Rules         string `short:"r" help:"Path to a CRE file"`
 	Source        string `short:"s" help:"Path to a data source file"`
@@ -250,14 +250,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !cli.NoReport {
-		if reportPath, err = report.Write(cli.ReportFile); err != nil {
-			log.Error().Err(err).Msg("Failed to write full report")
-			ux.RulesError(err)
-			os.Exit(1)
-		}
-	}
-
 	pw.Stop()
 
 LOOP:
@@ -275,7 +267,22 @@ LOOP:
 		}
 	}
 
-	if reportPath != "" && !cli.Quiet {
-		fmt.Fprintf(os.Stdout, "\nWrote report to %s\n", reportPath)
+	switch {
+	case cli.ReportFile == stdoutReport:
+		if err = report.PrintReport(); err != nil {
+			log.Error().Err(err).Msg("Failed to print report")
+			ux.RulesError(err)
+			os.Exit(1)
+		}
+	case cli.ReportFile != "":
+		if reportPath, err = report.Write(cli.ReportFile); err != nil {
+			log.Error().Err(err).Msg("Failed to write full report")
+			ux.RulesError(err)
+			os.Exit(1)
+		}
+
+		if !cli.Quiet {
+			fmt.Fprintf(os.Stdout, "\nWrote report to %s\n", reportPath)
+		}
 	}
 }
