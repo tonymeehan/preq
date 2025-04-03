@@ -112,11 +112,16 @@ func main() {
 
 	kong.Parse(&cli)
 
-	// Initialize logger first before any other logging
-	logs.InitLogger(
+	logOpts := []logs.InitOpt{
 		logs.WithLevel(cli.Level),
-		logs.WithPretty(),
-	)
+	}
+
+	if !cli.JsonLogs {
+		logOpts = append(logOpts, logs.WithPretty())
+	}
+
+	// Initialize logger first before any other logging
+	logs.InitLogger(logOpts...)
 
 	switch {
 	case cli.Version:
@@ -270,7 +275,7 @@ LOOP:
 		}
 	}
 
-	if reportPath != "" {
+	if reportPath != "" && !cli.Quiet {
 		fmt.Fprintf(os.Stdout, "\nWrote report to %s\n", reportPath)
 	}
 }
