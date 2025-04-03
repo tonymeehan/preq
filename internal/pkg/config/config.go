@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	DefaultConfig = `
-timestamp_regexes:
+	DefaultConfig = `timestamps:
   - format: epochany
     pattern: |
       "time":(\d{16,19})
@@ -27,17 +26,17 @@ timestamp_regexes:
 )
 
 type Config struct {
-	TimestampRegexes []Regex        `yaml:"timestamp_regexes"`
+	TimestampRegexes []Regex        `yaml:"timestamps"`
 	Rules            Rules          `yaml:"rules"`
-	UpdateFrequency  *time.Duration `yaml:"update_frequency"`
-	RulesVersion     string         `yaml:"rules_version"`
-	AcceptUpdates    bool           `yaml:"accept_updates"`
-	DataSources      string         `yaml:"data_sources"`
+	UpdateFrequency  *time.Duration `yaml:"updateFrequency"`
+	RulesVersion     string         `yaml:"rulesVersion"`
+	AcceptUpdates    bool           `yaml:"acceptUpdates"`
+	DataSources      string         `yaml:"dataSources"`
 }
 
 type Rules struct {
 	Paths    []string `yaml:"paths"`
-	Disabled bool     `yaml:"disable_community_rules"`
+	Disabled bool     `yaml:"disableCommunityRules"`
 }
 
 type Regex struct {
