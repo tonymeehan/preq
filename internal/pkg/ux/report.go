@@ -191,10 +191,29 @@ func (r *ReportT) Write(path string) (string, error) {
 	return reportName, nil
 }
 
-func (r *ReportT) CreateReport() (any, error) {
+func (r *ReportT) PrintReport() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
-	return r.createReport()
+
+	var (
+		o    any
+		data []byte
+		err  error
+	)
+
+	if o, err = r.createReport(); err != nil {
+		return err
+	}
+
+	data, err = json.MarshalIndent(o, "", "  ")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal report")
+		return err
+	}
+
+	fmt.Fprintln(os.Stdout, string(data))
+
+	return nil
 }
 
 // assumes lock is already held
