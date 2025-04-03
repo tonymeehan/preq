@@ -270,7 +270,7 @@ LOOP:
 		}
 	}
 
-	if reportPath != "" {
+	if reportPath != "" && !cli.Quiet {
 		fmt.Fprintf(os.Stdout, "\nWrote report to %s\n", reportPath)
 	}
 }
