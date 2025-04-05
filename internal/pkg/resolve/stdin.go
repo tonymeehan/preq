@@ -57,11 +57,19 @@ func newPipeReader(r io.Reader, opts ...OptT) (*PipeRdrT, error) {
 		return nil, err
 	}
 
+	// Only fold on Regex or rfc3339Nano; doesn't make sense on CRI or JSON
+	var fold bool
+	switch factory.String() {
+	case format.FactoryRegex, format.FactoryRfc339Nano:
+		fold = true
+	}
+
 	return &PipeRdrT{
 		src:      r,
 		prologue: bytes.NewBuffer(buf),
 		factory:  factory,
 		window:   o.window,
+		fold:     fold,
 	}, nil
 }
 
@@ -85,6 +93,7 @@ type PipeRdrT struct {
 	window   int64
 	prologue *bytes.Buffer
 	factory  format.FactoryI
+	fold     bool
 }
 
 func (p *PipeRdrT) Parser() format.ParserI {
@@ -104,7 +113,7 @@ func (p *PipeRdrT) Name() string {
 }
 
 func (p *PipeRdrT) Fold() bool {
-	return true
+	return p.fold
 }
 
 func (p *PipeRdrT) Window() int64 {
