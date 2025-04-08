@@ -6,16 +6,16 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/prequel-dev/prequel/internal/pkg/auth"
-	"github.com/prequel-dev/prequel/internal/pkg/config"
-	"github.com/prequel-dev/prequel/internal/pkg/engine"
-	"github.com/prequel-dev/prequel/internal/pkg/logs"
-	"github.com/prequel-dev/prequel/internal/pkg/resolve"
-	"github.com/prequel-dev/prequel/internal/pkg/rules"
-	"github.com/prequel-dev/prequel/internal/pkg/sigs"
-	"github.com/prequel-dev/prequel/internal/pkg/utils"
-	"github.com/prequel-dev/prequel/internal/pkg/ux"
-	"github.com/prequel-dev/prequel/pkg/datasrc"
+	"github.com/prequel-dev/preq/internal/pkg/auth"
+	"github.com/prequel-dev/preq/internal/pkg/config"
+	"github.com/prequel-dev/preq/internal/pkg/engine"
+	"github.com/prequel-dev/preq/internal/pkg/logs"
+	"github.com/prequel-dev/preq/internal/pkg/resolve"
+	"github.com/prequel-dev/preq/internal/pkg/rules"
+	"github.com/prequel-dev/preq/internal/pkg/sigs"
+	"github.com/prequel-dev/preq/internal/pkg/utils"
+	"github.com/prequel-dev/preq/internal/pkg/ux"
+	"github.com/prequel-dev/prequel-compiler/pkg/datasrc"
 
 	"github.com/Masterminds/semver"
 	"github.com/alecthomas/kong"
@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	defaultConfigDir = filepath.Join(os.Getenv("HOME"), ".prequel")
+	defaultConfigDir = filepath.Join(os.Getenv("HOME"), ".preq")
 	ruleToken        = filepath.Join(defaultConfigDir, ".ruletoken")
 	ruleUpdateFile   = filepath.Join(defaultConfigDir, ".ruleupdate")
 )
@@ -96,7 +96,7 @@ func main() {
 		ctx    = sigs.InitSignals()
 		parser = kong.Must(
 			&cli,
-			kong.Name(ux.AppName),
+			kong.Name(ux.ProcessName()),
 			kong.Description(ux.AppDesc),
 			kong.UsageOnError(),
 		)

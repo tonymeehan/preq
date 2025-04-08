@@ -13,7 +13,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/jedib0t/go-pretty/v6/progress"
-	"github.com/prequel-dev/prequel/internal/pkg/ux"
+	"github.com/prequel-dev/preq/internal/pkg/ux"
 	"github.com/rs/zerolog/log"
 )
 

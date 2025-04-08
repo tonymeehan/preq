@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prequel-dev/prequel/internal/pkg/resolve"
+	"github.com/prequel-dev/preq/internal/pkg/resolve"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )

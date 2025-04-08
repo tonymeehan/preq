@@ -24,19 +24,20 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/cqroot/prompt"
 	"github.com/cqroot/prompt/choose"
-	"github.com/prequel-dev/prequel/internal/pkg/config"
-	"github.com/prequel-dev/prequel/internal/pkg/utils"
-	"github.com/prequel-dev/prequel/internal/pkg/ux"
-	"github.com/prequel-dev/prequel/internal/pkg/verz"
+	"github.com/prequel-dev/preq/internal/pkg/config"
+	"github.com/prequel-dev/preq/internal/pkg/utils"
+	"github.com/prequel-dev/preq/internal/pkg/ux"
+	"github.com/prequel-dev/preq/internal/pkg/verz"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	prequelRulesPrefix       = "prequel-public-rules"
+	prequelRulesPrefix       = "prequel-public-cre-rules"
 	prequelRulesSuffix       = ".gz"
 	prequelRulesSha256Suffix = ".sha2"
 	prequelRulesSigSuffix    = ".sig"
+	tmpDirPrefix             = "preq-update"
 	defaultLocalCheckDur     = 24 * time.Hour * 2 // 2 days
 )
 
@@ -253,20 +254,20 @@ func shouldUpdateExe(r *RuleUpdateResponse) bool {
 func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl, token string, slowCheckTimeout, downloadTimeout time.Duration, acceptUpdates bool) error {
 
 	var (
-		downloadLink = fmt.Sprintf("https://github.com/prequel-dev/prequel/releases/tag/v%s", fullResp.LatestExeVersion)
+		downloadLink = fmt.Sprintf(ux.DownloadPreqLinkFmt, fullResp.LatestExeVersion)
 		choice       string
 		err          error
 	)
 
 	// No support for auto-update exe on Windows yet. We'll need to rundll32 a separate updater so we can overwrite the exe
 	if runtime.GOOS == "windows" {
-		txt := fmt.Sprintf("A new release is available (%s)! Download at %s.", fullResp.LatestExeVersion, downloadLink)
+		txt := fmt.Sprintf(ux.DownloadPreqAvailableFmt, fullResp.LatestExeVersion, downloadLink)
 		fmt.Fprint(os.Stdout, txt)
 		return nil
 	}
 
 	if !acceptUpdates {
-		txt := fmt.Sprintf("A new release is available (%s)! See %s for release notes.\nDo you want to update?", fullResp.LatestExeVersion, downloadLink)
+		txt := fmt.Sprintf(ux.DownloadPreqAvailablePromptFmt, fullResp.LatestExeVersion, downloadLink)
 		choice, err = prompt.New().Ask(txt).Choose(
 			[]string{"Yes", "No"},
 			choose.WithTheme(choose.ThemeArrow),
@@ -282,7 +283,7 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return nil
 	}
 
-	tempDir, err := os.MkdirTemp("", "prequel-update")
+	tempDir, err := os.MkdirTemp("", tmpDirPrefix)
 	if err != nil {
 		return err
 	}
@@ -334,7 +335,7 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return err
 	}
 
-	newExePath = filepath.Join(tempDir, "prequel")
+	newExePath = filepath.Join(tempDir, "preq")
 	if err = os.WriteFile(newExePath, eb, 0755); err != nil {
 		return err
 	}
@@ -344,7 +345,7 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return err
 	}
 
-	newExeHashPath = filepath.Join(tempDir, "prequel.exe.sha2")
+	newExeHashPath = filepath.Join(tempDir, "preq.sha2")
 	if err = os.WriteFile(newExeHashPath, hb, 0644); err != nil {
 		return err
 	}
@@ -354,7 +355,7 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return err
 	}
 
-	newExeSigPath = filepath.Join(tempDir, "prequel.exe.sig")
+	newExeSigPath = filepath.Join(tempDir, "preq.sig")
 	if err = os.WriteFile(newExeSigPath, sb, 0644); err != nil {
 		return err
 	}
@@ -412,12 +413,12 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl, token string, configDir string, slowCheckTimeout, downloadTimeout time.Duration, acceptUpdates bool) (string, error) {
 
 	var (
-		downloadLink = fmt.Sprintf("https://github.com/prequel-dev/cre/releases/tag/v%s", fullResp.LatestRuleVersion)
+		downloadLink = fmt.Sprintf(ux.DownloadCreLinkFmt, fullResp.LatestRuleVersion)
 		choice       string
 		err          error
 	)
 
-	txt := fmt.Sprintf("New community CREs are available (%s)! See %s for release notes.\nDo you want to update?", fullResp.LatestRuleVersion, downloadLink)
+	txt := fmt.Sprintf(ux.DownloadCreAvailablePromptFmt, fullResp.LatestRuleVersion, downloadLink)
 
 	if !acceptUpdates {
 		choice, err = prompt.New().Ask(txt).Choose(
@@ -435,7 +436,7 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", nil
 	}
 
-	tempDir, err := os.MkdirTemp("", "prequel-rule-update")
+	tempDir, err := os.MkdirTemp("", "cre-rule-update")
 	if err != nil {
 		return "", err
 	}
@@ -456,7 +457,7 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
-	newRulePath = filepath.Join(tempDir, "prequel-rules")
+	newRulePath = filepath.Join(tempDir, "cre-rules")
 	if err = os.WriteFile(newRulePath, rb, 0644); err != nil {
 		return "", err
 	}
@@ -466,7 +467,7 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
-	newRuleHashPath = filepath.Join(tempDir, "prequel-rules.sha256")
+	newRuleHashPath = filepath.Join(tempDir, "cre-rules.sha256")
 	if err = os.WriteFile(newRuleHashPath, hb, 0644); err != nil {
 		return "", err
 	}
@@ -476,7 +477,7 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
-	newRuleSigPath = filepath.Join(tempDir, "prequel-rules.sig")
+	newRuleSigPath = filepath.Join(tempDir, "cre-rules.sig")
 	if err = os.WriteFile(newRuleSigPath, sb, 0644); err != nil {
 		return "", err
 	}
