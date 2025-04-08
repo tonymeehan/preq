@@ -9,7 +9,7 @@ import (
 
 	"path/filepath"
 
-	"github.com/prequel-dev/prequel/pkg/datasrc"
+	"github.com/prequel-dev/prequel-compiler/pkg/datasrc"
 	"github.com/rs/zerolog/log"
 )
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/prequel-dev/prequel/internal/pkg/verz"
+	"github.com/prequel-dev/preq/internal/pkg/verz"
 )
 
 var (
@@ -20,7 +21,6 @@ var (
 )
 
 const (
-	AppName             = "prequel"
 	AppDesc             = "Prequel is the open and community-driven problem detector for Common Reliability Enumerations (CREs)."
 	ErrorCategoryRules  = "Rules"
 	ErrorCategoryData   = "Data"
@@ -29,19 +29,27 @@ const (
 )
 
 const (
-	versionTmpl        = "%s %s %s %s/%s %s\n%s\n\n"
-	rulesVersionTmpl   = "Current rules release: %s %s"
-	lineRefer          = "Learn more at https://docs.prequel.dev"
-	lineCopyright      = "Copyright 2025 Prequel Software, Inc. (https://prequel.dev)"
+	DownloadPreqLinkFmt            = "https://github.com/prequel-dev/preq/releases/tag/v%s"
+	DownloadPreqAvailableFmt       = "A new release is available (%s)! Download at %s."
+	DownloadPreqAvailablePromptFmt = "A new release is available (%s)! See %s for release notes.\nDo you want to update?"
+	DownloadCreLinkFmt             = "https://github.com/prequel-dev/cre/releases/tag/v%s"
+	DownloadCreAvailablePromptFmt  = "A new rules release is available (%s)! See %s for release notes.\nDo you want to update?"
+)
+
+const (
 	emailVerifyTitle   = "\nYou're one step away! Please verify your email\n"
 	emailVerifyBodyFmt = "It looks like your email (%s) has not been verified yet. Check your inbox for a verification link from "
 	emailVerifyFooter  = " and click it to activate your account. If you do not see the email, check your spam folder.\n\nSee https://docs.prequel.dev/updates for more information.\n\n"
 	emailVerifyFrom    = "updates@prequel.dev"
+	lineRefer          = "Learn more at https://docs.prequel.dev"
+	lineCopyright      = "Copyright 2025 Prequel Software, Inc. (https://prequel.dev)"
+	rulesVersionTmpl   = "Current rules release: %s %s"
 	usageFmt           = "Usage: %s [flags]\n"
 	usageHelp          = "See --help or visit https://docs.prequel.dev for more information\n\n"
 	usageExamples      = "Examples:\n"
 	usageExample1      = "  cat data.log | %s\n"
 	usageExample2      = "  kubectl logs nginx-pod | %s\n"
+	versionTmpl        = "%s %s %s %s/%s %s\n%s\n\n"
 )
 
 type UxFactoryI interface {
@@ -65,17 +73,17 @@ func PrintVersion(configDir, currRulesPath string, currRulesVer *semver.Version)
 	} else {
 		rulesOutput = fmt.Sprintf(rulesVersionTmpl, currRulesVer.String(), currRulesPath)
 	}
-	fmt.Printf(versionTmpl, AppName, verz.Semver(), verz.Githash, runtime.GOOS, runtime.GOARCH, verz.Date, rulesOutput)
+	fmt.Printf(versionTmpl, ProcessName(), verz.Semver(), verz.Githash, runtime.GOOS, runtime.GOARCH, verz.Date, rulesOutput)
 	fmt.Println(lineRefer)
 	fmt.Println(lineCopyright)
 }
 
 func PrintUsage() {
-	fmt.Fprintf(os.Stdout, usageFmt, AppName)
+	fmt.Fprintf(os.Stdout, usageFmt, ProcessName())
 	fmt.Fprint(os.Stdout, usageHelp)
 	fmt.Fprint(os.Stdout, usageExamples)
-	fmt.Fprintf(os.Stdout, usageExample1, AppName)
-	fmt.Fprintf(os.Stdout, usageExample2, AppName)
+	fmt.Fprintf(os.Stdout, usageExample1, ProcessName())
+	fmt.Fprintf(os.Stdout, usageExample2, ProcessName())
 }
 
 func NewProgressWriter(nTrackers int) progress.Writer {
@@ -215,4 +223,8 @@ func Error(err error) error {
 func ErrorMsg(err error, msg string) error {
 	fmt.Fprintf(os.Stderr, "%s\n", msg)
 	return err
+}
+
+func ProcessName() string {
+	return filepath.Base(os.Args[0])
 }

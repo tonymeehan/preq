@@ -19,7 +19,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/golang-jwt/jwt"
-	"github.com/prequel-dev/prequel/internal/pkg/ux"
+	"github.com/prequel-dev/preq/internal/pkg/ux"
 	"github.com/rs/zerolog/log"
 )
 

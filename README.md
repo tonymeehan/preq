@@ -1,8 +1,8 @@
-# Prequel
+# preq
 
-Prequel is a free and open community-driven reliability problem detector.
+`preq` is a free and open community-driven reliability problem detector.
 
-Use Prequel to:
+Use `preq` to:
 
 - detect the latest bugs, misconfigurations, anti-patterns, and known issues from a community of practitioners
 - provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
@@ -12,9 +12,9 @@ Learn more at https://docs.prequel.dev.
 
 ## Overview
 
-Prequel provides the latest Common Reliability Enumerations (CREs) created by the community and Prequel's Reliability Research Team. Reliability Intelligence from CREs helps teams see the most problems and see them first so they can prioritize, pinpoint, and act to mitigate outages.
+`preq` provides the latest Common Reliability Enumerations (CREs) created by the community and Prequel's Reliability Research Team. Reliability Intelligence from CREs helps teams see the most problems and see them first so they can prioritize, pinpoint, and act to mitigate outages.
 
-Prequel is powered by a rules engine that performs distributed matching and correlation of sequences of events across logs, metrics, traces, and other data sources to detect reliability problems. CREs provides accurate and timely context for a human or SRE agent to take action on problems.
+`preq` is powered by a rules engine that performs distributed matching and correlation of sequences of events across logs, metrics, traces, and other data sources to detect reliability problems. CREs provides accurate and timely context for a human or SRE agent to take action on problems.
 
 Below is simple rule that looks for a sequence of events in a single log source over a window of time along with a negative condition (an event that should not occur during the window).
 

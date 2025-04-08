@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prequel-dev/prequel/pkg/matchz"
-	"github.com/prequel-dev/prequel/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/matchz"
+	"github.com/prequel-dev/prequel-compiler/pkg/parser"
 
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -25,7 +25,7 @@ const (
 	colorHigh     = text.FgHiYellow
 	colorMedium   = text.FgHiMagenta
 	colorLow      = text.FgHiGreen
-	reportFmt     = "prequel-report-%d.json"
+	reportFmt     = "preq-report-%d.json"
 )
 
 type ReportT struct {

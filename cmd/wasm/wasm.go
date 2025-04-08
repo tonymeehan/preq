@@ -8,12 +8,12 @@ import (
 	"errors"
 	"syscall/js"
 
-	"github.com/prequel-dev/prequel/internal/pkg/config"
-	"github.com/prequel-dev/prequel/internal/pkg/engine"
-	"github.com/prequel-dev/prequel/internal/pkg/resolve"
-	"github.com/prequel-dev/prequel/internal/pkg/utils"
-	"github.com/prequel-dev/prequel/internal/pkg/ux"
-	"github.com/prequel-dev/prequel/internal/pkg/verz"
+	"github.com/prequel-dev/preq/internal/pkg/config"
+	"github.com/prequel-dev/preq/internal/pkg/engine"
+	"github.com/prequel-dev/preq/internal/pkg/resolve"
+	"github.com/prequel-dev/preq/internal/pkg/utils"
+	"github.com/prequel-dev/preq/internal/pkg/ux"
+	"github.com/prequel-dev/preq/internal/pkg/verz"
 	"github.com/rs/zerolog/log"
 )
 
@@ -82,7 +82,7 @@ func detectWrapper(ctx context.Context) js.Func {
 			Str("version", verz.Semver()).
 			Str("hash", verz.Githash).
 			Str("date", verz.Date).
-			Msg("Wasm prequel engine version")
+			Msg("Wasm preq engine version")
 
 		inputData = args[0].String()
 		ruleData = args[1].String()
