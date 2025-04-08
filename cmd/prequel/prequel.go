@@ -42,6 +42,7 @@ var cli struct {
 	Disabled      bool   `short:"d" help:"Do not run community CREs"`
 	Stop          string `short:"e" help:"Stop time"`
 	JsonLogs      bool   `short:"j" help:"Print logs in JSON format to stderr" default:"false"`
+	Skip          int    `short:"k" help:"Skip the first N lines for timestamp detection" default:"10"`
 	Level         string `short:"l" help:"Print logs at this level to stderr"`
 	ReportFile    string `short:"n" help:"Report filename"`
 	NoReport      bool   `short:"N" help:"Do not write a report"`
@@ -69,6 +70,7 @@ func tsOpts(c *config.Config) []resolve.OptT {
 		}
 		opts = append(opts, resolve.WithWindow(int64(window)))
 	}
+	opts = append(opts, resolve.WithTimestampTries(cli.Skip))
 	return opts
 }
 
@@ -200,8 +202,7 @@ func main() {
 	}
 
 	if len(sources) == 0 {
-		log.Error().Msg("No data sources found")
-		ux.DataError(fmt.Errorf("no data sources found"))
+		ux.PrintUsage()
 		os.Exit(1)
 	}
 
