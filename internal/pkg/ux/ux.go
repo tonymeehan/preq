@@ -37,6 +37,11 @@ const (
 	emailVerifyBodyFmt = "It looks like your email (%s) has not been verified yet. Check your inbox for a verification link from "
 	emailVerifyFooter  = " and click it to activate your account. If you do not see the email, check your spam folder.\n\nSee https://docs.prequel.dev/updates for more information.\n\n"
 	emailVerifyFrom    = "updates@prequel.dev"
+	usageFmt           = "Usage: %s [flags]\n"
+	usageHelp          = "See --help or visit https://docs.prequel.dev for more information\n\n"
+	usageExamples      = "Examples:\n"
+	usageExample1      = "  cat data.log | %s\n"
+	usageExample2      = "  kubectl logs nginx-pod | %s\n"
 )
 
 type UxFactoryI interface {
@@ -63,6 +68,14 @@ func PrintVersion(configDir, currRulesPath string, currRulesVer *semver.Version)
 	fmt.Printf(versionTmpl, AppName, verz.Semver(), verz.Githash, runtime.GOOS, runtime.GOARCH, verz.Date, rulesOutput)
 	fmt.Println(lineRefer)
 	fmt.Println(lineCopyright)
+}
+
+func PrintUsage() {
+	fmt.Fprintf(os.Stdout, usageFmt, AppName)
+	fmt.Fprint(os.Stdout, usageHelp)
+	fmt.Fprint(os.Stdout, usageExamples)
+	fmt.Fprintf(os.Stdout, usageExample1, AppName)
+	fmt.Fprintf(os.Stdout, usageExample2, AppName)
 }
 
 func NewProgressWriter(nTrackers int) progress.Writer {

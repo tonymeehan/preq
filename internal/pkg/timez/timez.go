@@ -89,7 +89,7 @@ func epochAny(m []byte) (int64, error) {
 
 }
 
-func TryTimestampFormat(exp string, fmtStr TimestampFmt, buf []byte) (format.FactoryI, int64, error) {
+func TryTimestampFormat(exp string, fmtStr TimestampFmt, buf []byte, maxTries int) (format.FactoryI, int64, error) {
 
 	var (
 		ts      int64
@@ -112,7 +112,7 @@ func TryTimestampFormat(exp string, fmtStr TimestampFmt, buf []byte) (format.Fac
 	ts, err = f.ReadTimestamp(bytes.NewReader(buf))
 
 	tries := 0
-	for (err != nil || ts == 0) && tries < 3 {
+	for (err != nil || ts == 0) && tries < maxTries {
 		// First line may contain a header; try up to N lines
 		tries += 1
 		if index := bytes.IndexByte(buf, '\n'); index != -1 {

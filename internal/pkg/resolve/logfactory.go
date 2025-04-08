@@ -5,6 +5,7 @@ import (
 
 	"github.com/prequel-dev/prequel-logmatch/pkg/format"
 	"github.com/prequel-dev/prequel/internal/pkg/timez"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -39,6 +40,12 @@ func WithWindow(window int64) func(*optsT) {
 	}
 }
 
+func WithTimestampTries(tries int) func(*optsT) {
+	return func(o *optsT) {
+		o.timestampTries = tries
+	}
+}
+
 func (o *optsT) tryCustom() bool {
 	return o.customFmt != "" || o.customRegex != ""
 }
@@ -47,13 +54,16 @@ func NewLogFactory(data []byte, opts ...OptT) (format.FactoryI, int64, error) {
 	o := parseOpts(opts...)
 
 	var (
-		err     error
-		stamp   int64
-		factory format.FactoryI
+		err      error
+		stamp    int64
+		maxTries = o.timestampTries
+		factory  format.FactoryI
 	)
 
+	log.Debug().Int("maxTries", maxTries).Msg("Trying custom timestamp format")
+
 	if o.tryCustom() {
-		return timez.TryTimestampFormat(o.customRegex, timez.TimestampFmt(o.customFmt), data)
+		return timez.TryTimestampFormat(o.customRegex, timez.TimestampFmt(o.customFmt), data, maxTries)
 	}
 
 	// Detect format
@@ -63,7 +73,7 @@ func NewLogFactory(data []byte, opts ...OptT) (format.FactoryI, int64, error) {
 
 	// Failed to detect format, try timestamp regexes if any
 	for _, spec := range o.stampRegex {
-		if factory, stamp, err = timez.TryTimestampFormat(spec.Pattern, spec.Format, data); err == nil {
+		if factory, stamp, err = timez.TryTimestampFormat(spec.Pattern, spec.Format, data, maxTries); err == nil {
 			break
 		}
 	}
@@ -76,10 +86,11 @@ func NewLogFactory(data []byte, opts ...OptT) (format.FactoryI, int64, error) {
 }
 
 type optsT struct {
-	customFmt   string
-	customRegex string
-	stampRegex  []FmtSpec
-	window      int64
+	customFmt      string
+	customRegex    string
+	stampRegex     []FmtSpec
+	window         int64
+	timestampTries int
 }
 
 func parseOpts(opts ...OptT) *optsT {
