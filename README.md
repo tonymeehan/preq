@@ -56,7 +56,7 @@ rule:
       src: log
       container_name: rabbitmq
     order:
-      - Discarding message(.+)in an old incarnation(.+)of this node
+      - regex: Discarding message(.+)in an old incarnation(.+)of this node
       - Mnesia is overloaded
     negate:
       - SIGTERM received - shutting down
