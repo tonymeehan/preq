@@ -1,6 +1,6 @@
 # preq
 
-`preq` is a free and open community-driven reliability problem detector. Use `preq` to:
+`preq` (prounounced "preek") is a free and open community-driven reliability problem detector. Use `preq` to:
 
 - detect the latest bugs, misconfigurations, anti-patterns, and known issues from a community of practitioners
 - provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
