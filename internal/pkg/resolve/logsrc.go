@@ -84,7 +84,7 @@ func newLogSrc(fn string, opts ...OptT) (src *logSrc, err error) {
 	// Only fold on Regex or rfc3339Nano; doesn't make sense on CRI or JSON
 	var fold bool
 	switch factory.String() {
-	case format.FactoryRegex, format.FactoryRfc339Nano:
+	case format.FactoryRegex, format.FactoryRfc3339Nano:
 		fold = true
 	}
 
