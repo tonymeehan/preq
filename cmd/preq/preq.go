@@ -43,7 +43,7 @@ var cli struct {
 	Disabled      bool   `short:"d" help:"Do not run community CREs"`
 	Stop          string `short:"e" help:"Stop time"`
 	JsonLogs      bool   `short:"j" help:"Print logs in JSON format to stderr" default:"false"`
-	Skip          int    `short:"k" help:"Skip the first N lines for timestamp detection" default:"10"`
+	Skip          int    `short:"k" help:"Skip the first N lines for timestamp detection" default:"20"`
 	Level         string `short:"l" help:"Print logs at this level to stderr"`
 	ReportFile    string `short:"n" help:"Report filename"`
 	Quiet         bool   `short:"q" help:"Quiet mode, do not print progress"`
