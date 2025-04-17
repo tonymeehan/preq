@@ -6,4 +6,4 @@ rules:
         event:
           source: kafka
         match:
-          - "foo(.+)bar"
+          - regex: "foo(.+)bar"
