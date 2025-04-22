@@ -13,10 +13,10 @@ import (
 	"github.com/prequel-dev/preq/internal/pkg/resolve"
 	"github.com/prequel-dev/preq/internal/pkg/utils"
 	"github.com/prequel-dev/preq/internal/pkg/ux"
-	"github.com/prequel-dev/prequel-compiler/pkg/ast"
 	"github.com/prequel-dev/prequel-compiler/pkg/compiler"
 	"github.com/prequel-dev/prequel-compiler/pkg/matchz"
 	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+	"github.com/prequel-dev/prequel-compiler/pkg/pqerr"
 	"github.com/prequel-dev/prequel-compiler/pkg/schema"
 	"github.com/prequel-dev/prequel-logmatch/pkg/entry"
 	lm "github.com/prequel-dev/prequel-logmatch/pkg/match"
@@ -89,6 +89,7 @@ func compileRulePath(cf compiler.RuntimeI, path string) (compiler.ObjsT, *parser
 	)
 
 	log.Info().Str("path", path).Msg("Parsing rules")
+
 	if rules, err = utils.ParseRulesPath(path); err != nil {
 		log.Error().Err(err).Msg("Failed to parse rules")
 		return nil, nil, err
@@ -105,8 +106,7 @@ func compileRulePath(cf compiler.RuntimeI, path string) (compiler.ObjsT, *parser
 
 	nodeObjs, err = compileRuleTree(cf, tree)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to compile rule tree")
-		return nil, nil, err
+		return nil, nil, pqerr.WithFile(err, path)
 	}
 
 	return nodeObjs, rules, nil
@@ -293,8 +293,8 @@ func loadNodeObjs(objs compiler.ObjsT) (*RuleMatchersT, error) {
 			return nil, ErrExpectedMatcherCb
 		}
 
-		switch obj.Type {
-		case ast.NodeTypeLogSeq:
+		switch obj.AbstractType {
+		case schema.NodeTypeLogSeq:
 
 			switch o := obj.Object.(type) {
 			case *lm.InverseSeq, *lm.MatchSeq:
@@ -307,7 +307,7 @@ func loadNodeObjs(objs compiler.ObjsT) (*RuleMatchersT, error) {
 				return nil, ErrUnknownObjectType
 			}
 
-		case ast.NodeTypeLogSet:
+		case schema.NodeTypeLogSet:
 			switch o := obj.Object.(type) {
 			case *lm.MatchSingle, *lm.MatchSet, *lm.MatchFunc, *lm.InverseSet:
 				m.match[obj.RuleId] = o
@@ -322,7 +322,7 @@ func loadNodeObjs(objs compiler.ObjsT) (*RuleMatchersT, error) {
 		default:
 			log.Error().
 				Str("rule_id", obj.RuleId).
-				Str("type", obj.Type.String()).
+				Str("abstract_type", obj.AbstractType.String()).
 				Any("obj", obj).
 				Msg("Unknown object type")
 			return nil, ErrUnknownObjectType
@@ -373,6 +373,14 @@ func (r *runtimeT) NewCbAssert(params compiler.AssertParamsT) compiler.CbAssertT
 	}
 }
 
+func (r *runtimeT) LoadAssertObject(ctx context.Context, obj *compiler.ObjT) error {
+	return nil
+}
+
+func (r *runtimeT) LoadMachineObject(ctx context.Context, obj *compiler.ObjT, userCb any) error {
+	return nil
+}
+
 // Permit wasm compile rules from a byte slice
 func (r *RuntimeT) CompileRules(ruleData []byte, report *ux.ReportT) (*RuleMatchersT, error) {
 	var (
@@ -406,11 +414,12 @@ func (r *RuntimeT) getRuntimeCb(report *ux.ReportT) *runtimeT {
 	runtime := NewRuntime(func(params compiler.MatchParamsT, m matchz.HitsT) error {
 
 		var (
-			cre parser.ParseCreT
+			cre      parser.ParseCreT
+			ruleHash = params.Address.GetRuleHash()
 		)
 
-		if cre, err = r.getCre(params.RuleHash); err != nil {
-			log.Error().Str("rule_hash", params.RuleHash).Msg("Failed to get CRE for rule")
+		if cre, err = r.getCre(ruleHash); err != nil {
+			log.Error().Str("rule_hash", ruleHash).Msg("Failed to get CRE for rule")
 			return err
 		}
 
@@ -462,7 +471,6 @@ func (r *RuntimeT) CompileRulesPath(rulesPaths []string, report *ux.ReportT) (*R
 	runtime := r.getRuntimeCb(report)
 
 	if nodeObjs, configs, err = r.compileRulesPaths(runtime, rulesPaths); err != nil {
-		log.Error().Err(err).Msg("Failed to load rules")
 		return nil, err
 	}
 
@@ -490,7 +498,6 @@ func (r *RuntimeT) LoadRulesPaths(rep *ux.ReportT, rulesPaths []string) (*RuleMa
 	)
 
 	if ruleMatchers, err = r.CompileRulesPath(rulesPaths, rep); err != nil {
-		log.Error().Err(err).Msg("Failed to compile rules")
 		return nil, err
 	}
 

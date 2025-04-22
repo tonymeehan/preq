@@ -201,11 +201,6 @@ func main() {
 		}
 	}
 
-	if len(sources) == 0 {
-		ux.PrintUsage()
-		os.Exit(1)
-	}
-
 	// Get stop time
 	if stop, err = utils.ParseTime(cli.Stop, defStop); err != nil {
 		log.Error().Err(err).Msg("Failed to parse stop time")
@@ -213,30 +208,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	pw := ux.RootProgress(!useStdin)
-
 	var (
+		pw           = ux.RootProgress(!useStdin)
 		renderExit   = make(chan struct{})
+		r            = engine.New(stop, ux.NewUxCmd(pw))
+		report       = ux.NewReport(pw)
 		reportPath   string
 		ruleMatchers *engine.RuleMatchersT
 	)
+
+	defer r.Close()
+
+	if ruleMatchers, err = r.LoadRulesPaths(report, rulesPaths); err != nil {
+		log.Error().Err(err).Msg("Failed to load rules")
+		ux.RulesError(err)
+		os.Exit(1)
+	}
+
+	if len(sources) == 0 {
+		ux.PrintUsage()
+		os.Exit(1)
+	}
 
 	if !cli.Quiet {
 		go func() {
 			pw.Render()
 			renderExit <- struct{}{}
 		}()
-	}
-
-	r := engine.New(stop, ux.NewUxCmd(pw))
-	defer r.Close()
-
-	report := ux.NewReport(pw)
-
-	if ruleMatchers, err = r.LoadRulesPaths(report, rulesPaths); err != nil {
-		log.Error().Err(err).Msg("Failed to load rules")
-		ux.RulesError(err)
-		os.Exit(1)
 	}
 
 	if err = r.Run(ctx, ruleMatchers, sources, report); err != nil {
