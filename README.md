@@ -2,7 +2,7 @@
 
 `preq` (prounounced "preek") is a free and open community-driven reliability problem detector
 
-[Documentation](https://docs.prequel.dev/cres/introduction) | [Slack](https://prequel-dev.slack.com/) | [Playground](https://play.prequel.dev/) | [Mailing List](https://www.detect.sh)
+[Documentation](https://docs.prequel.dev) | [Slack](https://prequel-dev.slack.com/) | [Playground](https://play.prequel.dev/) | [Mailing List](https://www.detect.sh)
 
 ---
 
