@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prequel-dev/prequel-compiler/pkg/matchz"
+	"github.com/prequel-dev/preq/internal/pkg/matchz"
 	"github.com/prequel-dev/prequel-compiler/pkg/parser"
 
 	"github.com/jedib0t/go-pretty/v6/progress"
