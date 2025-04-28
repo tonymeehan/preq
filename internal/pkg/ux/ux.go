@@ -30,6 +30,7 @@ const (
 	ErrorCategoryConfig = "Config"
 	ErrorCategoryAuth   = "Auth"
 	ErrorHelpDataStr    = "https://docs.prequel.dev/timestamps"
+	avatarUrl           = "https://lh6.googleusercontent.com/proxy/4BxU9vs8qEDhtBzF4oSspqVc_QPoiDRnGFqiCQzmePDxRvumx50mipYIrY7w1_wGrVPo9AihBQpoAR3oENkd7jNfWLmLWgZZ2GpW71dVblKLcjQsLQgB7p1ZxNHYS-v9tg"
 )
 
 const (
@@ -50,20 +51,43 @@ const (
 )
 
 const (
-	authUrlFmt         = "Automatic updates of community CREs and new releases of preq are available to users for free.\nTo receive secure updates, complete the OAuth 2.0 device code process. You will not be prompted to do this again until the token expires in 3 months.\n\nAttempting to automatically open SSO authorization in your default browser.\nIf the browser does not open or you wish to use a different device to authorize this request, open the following URL: \n\n%s\n\n"
-	emailVerifyTitle   = "\nYou're one step away! Please verify your email\n"
-	emailVerifyBodyFmt = "It looks like your email (%s) has not been verified yet. Check your inbox for a verification link from "
-	emailVerifyFooter  = " and click it to activate your account. If you do not see the email, check your spam folder.\n\nSee https://docs.prequel.dev/updates for more information.\n\n"
-	emailVerifyFrom    = "updates@prequel.dev"
-	lineRefer          = "Learn more at https://docs.prequel.dev"
-	lineCopyright      = "Copyright 2025 Prequel Software, Inc. (https://prequel.dev)"
-	rulesVersionTmpl   = "Current rules release: %s %s"
-	usageFmt           = "Usage: %s [flags]\n"
-	usageHelp          = "See --help or visit https://docs.prequel.dev for more information\n\n"
-	usageExamples      = "Examples:\n"
-	usageExample1      = "  cat data.log | %s\n"
-	usageExample2      = "  kubectl logs nginx-pod | %s\n"
-	versionTmpl        = "%s %s %s %s/%s %s\n%s\n\n"
+	authUrlFmt             = "Automatic updates of community CREs and new releases of preq are available to users for free.\nTo receive secure updates, complete the OAuth 2.0 device code process. You will not be prompted to do this again until the token expires in 3 months.\n\nAttempting to automatically open SSO authorization in your default browser.\nIf the browser does not open or you wish to use a different device to authorize this request, open the following URL: \n\n%s\n\n"
+	emailVerifyTitle       = "\nYou're one step away! Please verify your email\n"
+	emailVerifyBodyFmt     = "It looks like your email (%s) has not been verified yet. Check your inbox for a verification link from "
+	emailVerifyFooter      = " and click it to activate your account. If you do not see the email, check your spam folder.\n\nSee https://docs.prequel.dev/updates for more information.\n\n"
+	emailVerifyFrom        = "updates@prequel.dev"
+	lineRefer              = "Learn more at https://docs.prequel.dev"
+	lineCopyright          = "Copyright 2025 Prequel Software, Inc. (https://prequel.dev)"
+	notificationPrefixTmpl = "%s"
+	rulesVersionTmpl       = "Current rules release: %s %s"
+	usageFmt               = "Usage: %s [flags]\n"
+	usageHelp              = "See --help or visit https://docs.prequel.dev for more information\n\n"
+	usageExamples          = "Examples:\n"
+	usageExample1          = "  cat data.log | %s\n"
+	usageExample2          = "  kubectl logs nginx-pod | %s\n"
+	versionTmpl            = "%s %s %s %s/%s %s\n%s\n\n"
+)
+
+const (
+	KrewUsage     = "kubectl preq POD [-c container]"
+	KrewDescShort = "Use common reliability enumerations (CREs) to detect problems"
+	KrewDescLong  = `
+preq (prounounced "preek") is a free and open community-driven reliability problem detector. Use preq to:
+
+- detect the latest bugs, misconfigurations, anti-patterns, and known issues from a community of practitioners
+- provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
+- hunt for new problems in logs
+
+preq is powered by Common Reliability Enumerations (CREs) that are contributed by the problem detection community and Prequel's Reliability Research Team. Reliability intelligence helps teams see a broad range of problems earlier, so they can prioritize, pinpoint, and reduce the risk of outages.
+
+Visit https://docs.prequel.dev for more information.
+
+Happy hunting!`
+
+	KrewExamples = `
+  Detect problems in a pod named 'postgresql' in the 'default' namespace
+   $ kubectl preq --namespace default POD --container postgresql
+`
 )
 
 type UxFactoryI interface {

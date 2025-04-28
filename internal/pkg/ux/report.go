@@ -1,19 +1,28 @@
 package ux
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/prequel-dev/preq/internal/pkg/matchz"
 	"github.com/prequel-dev/prequel-compiler/pkg/parser"
 
 	"github.com/jedib0t/go-pretty/v6/progress"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	ErrInvalidSeverity = errors.New("invalid severity")
 )
 
 const (
@@ -26,6 +35,16 @@ const (
 	colorMedium   = text.FgHiMagenta
 	colorLow      = text.FgHiGreen
 	reportFmt     = "preq-report-%d.json"
+)
+
+const (
+	NotificationSlack = "slack"
+)
+
+var (
+	sevWidth = max(len(sevCritical), len(sevHigh), len(sevMedium), len(sevLow))
+	retries  = uint(3)
+	delay    = time.Second * 5
 )
 
 type ReportT struct {
@@ -97,6 +116,38 @@ func getColorizedCre(creId string, colors text.Colors) string {
 	return colors.Sprintf("%-20s", creId)
 }
 
+type severityT struct {
+	severity string
+	color    text.Color
+}
+
+func getSeverity(severity uint) (*severityT, error) {
+	switch severity {
+	case parser.SeverityCritical:
+		return &severityT{
+			severity: sevCritical,
+			color:    colorCritical,
+		}, nil
+	case parser.SeverityHigh:
+		return &severityT{
+			severity: sevHigh,
+			color:    colorHigh,
+		}, nil
+	case parser.SeverityMedium:
+		return &severityT{
+			severity: sevMedium,
+			color:    colorMedium,
+		}, nil
+	case parser.SeverityLow:
+		return &severityT{
+			severity: sevLow,
+			color:    colorLow,
+		}, nil
+	}
+
+	return nil, ErrInvalidSeverity
+}
+
 func (r *ReportT) DisplayCREs() error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
@@ -123,33 +174,17 @@ func (r *ReportT) DisplayCREs() error {
 			continue
 		}
 
-		var (
-			color    text.Color
-			severity string
-		)
-
-		switch rule.Cre.Severity {
-		case parser.SeverityCritical:
-			severity = sevCritical
-			color = colorCritical
-		case parser.SeverityHigh:
-			severity = sevHigh
-			color = colorHigh
-		case parser.SeverityMedium:
-			severity = sevMedium
-			color = colorMedium
-		case parser.SeverityLow:
-			severity = sevLow
-			color = colorLow
+		sev, err := getSeverity(rule.Cre.Severity)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get severity")
+			continue
 		}
-
-		const sevWidth = max(len(sevCritical), len(sevHigh), len(sevMedium), len(sevLow))
 
 		var (
 			count = getColorizedCount(len(creHits), creHits[0])
-			cre   = getColorizedCre(rule.Cre.Id, text.Colors{color, text.Bold})
+			cre   = getColorizedCre(rule.Cre.Id, text.Colors{sev.color, text.Bold})
 			tmpl  = fmt.Sprintf("%%%ds", sevWidth)
-			sevS  = text.Colors{color}.Sprintf(tmpl, severity)
+			sevS  = text.Colors{sev.color}.Sprintf(tmpl, sev.severity)
 		)
 
 		r.Pw.Log(fmt.Sprintf("%s %s %s", cre, sevS, count))
@@ -260,8 +295,72 @@ func (r *ReportT) createReport() (any, error) {
 
 		o["hits"] = matchHits
 		out = append(out, o)
-
 	}
 
 	return out, nil
+}
+
+func (r *ReportT) PostSlackDetection(ctx context.Context, url string, notificationContext string) error {
+	return r.postSlackDetection(ctx, url, notificationContext)
+}
+
+func (r *ReportT) postSlackDetection(ctx context.Context, url, notificationContext string) error {
+
+	var (
+		notification string
+		msg          = make(map[string]any)
+		jsonData     []byte
+		err          error
+	)
+
+	notification = fmt.Sprintf(notificationPrefixTmpl, notificationContext)
+
+	for creId := range r.CreHits {
+		sev, err := getSeverity(r.Rules[creId].Cre.Severity)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to get severity")
+			continue
+		}
+		notification += fmt.Sprintf("%s (%s), ", creId, sev.severity)
+	}
+
+	// remove the last comma
+	notification = notification[:len(notification)-2]
+	msg["text"] = notification
+
+	jsonData, err = json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	httpRequest, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	httpRequest.Header.Set("Accept", "application/json")
+
+	client := &http.Client{}
+
+	return retry.Do(
+		func() error {
+
+			resp, err := client.Do(httpRequest)
+			if err != nil {
+				log.Error().Err(err).Msg("Fail client.Do()")
+				return err
+			}
+			defer resp.Body.Close()
+
+			return nil
+		},
+		retry.Attempts(retries),
+		retry.Delay(delay),
+		retry.Context(ctx),
+		retry.OnRetry(func(u uint, err error) {
+			log.Error().Err(err).Uint("retry", u).Msg("Retry token poll error")
+		}),
+		retry.DelayType(retry.BackOffDelay),
+		retry.LastErrorOnly(true),
+	)
 }
