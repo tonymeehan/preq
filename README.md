@@ -12,6 +12,10 @@ Use `preq` to:
 - provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
 - hunt for new problems in distributed systems
 
+## Install
+
+See https://docs.prequel.dev/install.
+
 ## Overview
 
 `preq` uses Common Reliability Enumerations (CREs) created by the problem detection community and Prequel's Reliability Research Team to detect reliability problems. Reliability Intelligence from CREs helps teams see the most problems and see them first so they can prioritize, pinpoint, and act to mitigate outages.
