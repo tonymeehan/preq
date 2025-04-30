@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,6 +39,7 @@ var (
 	ErrUnknownObjectType = errors.New("unknown object type")
 	ErrExpectedMatcherCb = errors.New("expected matcher callback")
 	ErrDuplicateRule     = errors.New("duplicate rule")
+	ErrNoRules           = errors.New("no rules provided")
 )
 
 type RuntimeT struct {
@@ -499,10 +501,23 @@ func (r *RuntimeT) LoadRulesPaths(rep *ux.ReportT, rulesPaths []string) (*RuleMa
 
 	var (
 		ruleMatchers *RuleMatchersT
+		paths        = make([]string, 0, len(rulesPaths))
 		err          error
 	)
 
-	if ruleMatchers, err = r.CompileRulesPath(rulesPaths, rep); err != nil {
+	for _, path := range rulesPaths {
+		if _, err = os.Stat(path); err != nil {
+			log.Warn().Str("path", path).Msg("Failed to stat path. Continue...")
+			continue
+		}
+		paths = append(paths, path)
+	}
+
+	if len(paths) == 0 {
+		return nil, ErrNoRules
+	}
+
+	if ruleMatchers, err = r.CompileRulesPath(paths, rep); err != nil {
 		return nil, err
 	}
 

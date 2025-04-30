@@ -273,7 +273,15 @@ LOOP:
 		}
 
 		if !Options.Quiet {
-			fmt.Fprintf(os.Stdout, "Sent Slack notification\n")
+
+			// Print reports to stdout when notifications are enabled
+			if err = report.PrintReport(); err != nil {
+				log.Error().Err(err).Msg("Failed to print report")
+				ux.RulesError(err)
+				return err
+			}
+
+			fmt.Fprintf(os.Stdout, "\nSent Slack notification\n")
 		}
 
 	case Options.Name == ux.OutputStdout:
