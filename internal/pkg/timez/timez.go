@@ -20,6 +20,10 @@ var (
 
 type TimestampFmt string
 
+func (f TimestampFmt) String() string {
+	return string(f)
+}
+
 const (
 	FmtRfc3339      TimestampFmt = "rfc3339"
 	FmtRfc3339Nano  TimestampFmt = "rfc3339nano"
@@ -102,6 +106,11 @@ func TryTimestampFormat(exp string, fmtStr TimestampFmt, buf []byte, maxTries in
 		err     error
 	)
 
+	log.Debug().
+		Str("exp", exp).
+		Str("fmt", fmtStr.String()).
+		Msg("Trying timestamp format")
+
 	if cb, err = GetTimestampFormat(fmtStr); err != nil {
 		log.Error().Err(err).Msg("Failed to get timestamp format")
 		return nil, 0, err
@@ -135,6 +144,11 @@ func TryTimestampFormat(exp string, fmtStr TimestampFmt, buf []byte, maxTries in
 	if ts == 0 {
 		return nil, 0, ErrInvalidTimestampFormat
 	}
+
+	log.Debug().
+		Str("exp", exp).
+		Str("fmt", fmtStr.String()).
+		Msg("Selected timestamp format")
 
 	return factory, ts, nil
 }
