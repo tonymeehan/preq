@@ -1,0 +1,38 @@
+name: preq build/test
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [trigger-workflow]
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Go Project
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.24.2]
+        os: [ubuntu-24.04]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Verify Go Version
+        run: go version
+
+      - name: Run preq tests
+        run: |
+          cd test
+          go test
