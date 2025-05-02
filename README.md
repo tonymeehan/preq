@@ -4,6 +4,8 @@
 
 [Documentation](https://docs.prequel.dev) | [Slack](https://prequel-dev.slack.com/) | [Playground](https://play.prequel.dev/) | [Mailing List](https://www.detect.sh)
 
+[![Unit Tests](https://github.com/prequel-dev/preq/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/preq/actions/workflows/build.yml)
+
 ---
 
 Use `preq` to:
