@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
@@ -15,12 +16,19 @@ import (
 	"runtime"
 
 	"github.com/prequel-dev/prequel-compiler/pkg/parser"
+
+	"gopkg.in/yaml.v2"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 var (
 	ErrGzip  = errors.New("gzip error")
 	ErrRead  = errors.New("read error")
 	ErrWrite = errors.New("write error")
+)
+
+var (
+	sectionRules = "rules"
 )
 
 func GetStopTime() (ts int64) {
@@ -71,11 +79,69 @@ func OpenRulesFile(filePath string) (io.Reader, func(), error) {
 	return file, cleanup, nil
 }
 
-func ParseRulesPath(path string) (*parser.RulesT, error) {
+func ExtractSectionBytes(rdr io.Reader, targetSection string) ([]byte, error) {
+	yr := utilyaml.NewYAMLReader(bufio.NewReader(rdr))
+
+	for {
+		docBytes, err := yr.Read() // raw bytes up to the next '---'
+		if err != nil {
+			if err == io.EOF {
+				return nil, fmt.Errorf("section %q not found", targetSection)
+			}
+			return nil, err
+		}
+
+		var meta struct {
+			Section string `yaml:"section"`
+		}
+
+		if err := yaml.Unmarshal(docBytes, &meta); err != nil {
+			continue
+		}
+
+		if meta.Section == targetSection {
+			return docBytes, nil
+		}
+	}
+}
+
+type ReaderOptT func(*readerOptsT)
+
+func WithMultiDoc() func(*readerOptsT) {
+	return func(o *readerOptsT) {
+		o.multiDoc = true
+	}
+}
+
+func WithGenIds() func(*readerOptsT) {
+	return func(o *readerOptsT) {
+		o.genIds = true
+	}
+}
+
+type readerOptsT struct {
+	multiDoc bool
+	genIds   bool
+}
+
+func readerOpts(opts ...ReaderOptT) *readerOptsT {
+	o := &readerOptsT{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	return o
+}
+
+func ParseRulesPath(path string, opts ...ReaderOptT) (*parser.RulesT, error) {
+	o := readerOpts(opts...)
+
 	var (
-		reader io.Reader
-		close  func()
-		err    error
+		reader     io.Reader
+		rulesBytes []byte
+		readOpts   = make([]parser.ParseOptT, 0)
+		close      func()
+		err        error
 	)
 
 	if reader, close, err = OpenRulesFile(path); err != nil {
@@ -83,10 +149,27 @@ func ParseRulesPath(path string) (*parser.RulesT, error) {
 	}
 	defer close()
 
-	return parser.Read(reader)
+	if o.multiDoc {
+		if rulesBytes, err = ExtractSectionBytes(reader, sectionRules); err != nil {
+			return nil, err
+		}
+		return parser.Read(bytes.NewReader(rulesBytes))
+	}
+
+	if o.genIds {
+		readOpts = append(readOpts, parser.WithGenIds())
+	}
+
+	return parser.Read(reader, readOpts...)
 }
 
-func ParseRules(rdr io.Reader) (*parser.RulesT, error) {
+func ParseRules(rdr io.Reader, opts ...ReaderOptT) (*parser.RulesT, error) {
+	o := readerOpts(opts...)
+
+	if o.genIds {
+		return parser.Read(rdr, parser.WithGenIds())
+	}
+
 	return parser.Read(rdr)
 }
 

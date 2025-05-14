@@ -204,6 +204,10 @@ func TestMissExamples(t *testing.T) {
 			rulePath: "../examples/30-negate-absolute.yaml",
 			dataPath: "../examples/30-example.log",
 		},
+		"Missing-IDs": {
+			rulePath: "missing-ids.yaml",
+			dataPath: "missing-ids.log",
+		},
 	}
 
 	ctx := context.Background()

@@ -94,12 +94,25 @@ const (
 	maxResp = 1500 // typical MTU size
 )
 
-func GetRules(ctx context.Context, conf *config.Config, configDir, cmdLineRules, token, ruleUpdateFile, baseAddr string, tlsPort, udpPort int) ([]string, error) {
+type RuleTypeT string
+
+const (
+	RuleTypeCre  RuleTypeT = "cre"
+	RuleTypeUser RuleTypeT = "user"
+)
+
+type RulePathT struct {
+	Path string
+	Type RuleTypeT
+}
+
+func GetRules(ctx context.Context, conf *config.Config, configDir, cmdLineRules, token, ruleUpdateFile, baseAddr string, tlsPort, udpPort int) ([]RulePathT, error) {
 	var (
 		syncRulesPath string
-		rulePaths     = make([]string, 0)
+		rulePaths     = make([]RulePathT, 0)
 		err           error
 	)
+
 	// Sync rules
 	if syncRulesPath, err = syncUpdates(ctx, conf, configDir, token, ruleUpdateFile, baseAddr, tlsPort, udpPort); err != nil {
 		// Continue on error. If we cannot download any rules at all on first run, a user will have to provide them on the command line or config
@@ -107,14 +120,25 @@ func GetRules(ctx context.Context, conf *config.Config, configDir, cmdLineRules,
 	}
 
 	if syncRulesPath != "" && !conf.Rules.Disabled {
-		rulePaths = append(rulePaths, syncRulesPath)
+		rulePaths = append(rulePaths, RulePathT{
+			Path: syncRulesPath,
+			Type: RuleTypeCre,
+		})
 	}
 
 	if cmdLineRules != "" {
-		rulePaths = append(rulePaths, cmdLineRules)
+		rulePaths = append(rulePaths, RulePathT{
+			Path: cmdLineRules,
+			Type: RuleTypeUser,
+		})
 	}
 
-	rulePaths = append(rulePaths, conf.Rules.Paths...)
+	for _, path := range conf.Rules.Paths {
+		rulePaths = append(rulePaths, RulePathT{
+			Path: path,
+			Type: RuleTypeUser,
+		})
+	}
 
 	if len(rulePaths) == 0 {
 		return nil, ErrNoRules
@@ -294,7 +318,23 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return nil
 	}
 
-	tempDir, err := os.MkdirTemp("", tmpDirPrefix)
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	// If the returned path might be a symlink, use filepath.EvalSymlinks
+	// to resolve it to the real path.
+	currPath, err := filepath.EvalSymlinks(exe)
+	if err != nil {
+		return err
+	}
+
+	log.Debug().
+		Str("path", currPath).
+		Msg("Current exe path")
+
+	tempDir, err := os.MkdirTemp(filepath.Dir(currPath), tmpDirPrefix)
 	if err != nil {
 		return err
 	}
@@ -351,6 +391,10 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return err
 	}
 
+	log.Debug().
+		Str("path", newExePath).
+		Msg("Temp updated exe path")
+
 	hb, err = downloadPackage(ctx, apiUrl, hashUrl, token, hashSize, pw, slowCheckTimeout, downloadTimeout)
 	if err != nil {
 		return err
@@ -361,6 +405,10 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 		return err
 	}
 
+	log.Debug().
+		Str("path", newExeHashPath).
+		Msg("Temp updated exe hash path")
+
 	sb, err = downloadPackage(ctx, apiUrl, sigUrl, token, sigSize, pw, slowCheckTimeout, downloadTimeout)
 	if err != nil {
 		return err
@@ -370,6 +418,10 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 	if err = os.WriteFile(newExeSigPath, sb, 0644); err != nil {
 		return err
 	}
+
+	log.Debug().
+		Str("path", newExeSigPath).
+		Msg("Temp updated exe sig path")
 
 	block, _ := pem.Decode(publicRulesKeyPEM)
 	if block == nil {
@@ -402,21 +454,14 @@ func requestExeUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl,
 
 	fmt.Println("ECDSA signature and sha256 hash verified")
 
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	// If the returned path might be a symlink, use filepath.EvalSymlinks
-	// to resolve it to the real path.
-	currPath, err := filepath.EvalSymlinks(exe)
-	if err != nil {
-		return err
-	}
-
 	if err = utils.CopyFile(newExePath, currPath); err != nil {
 		return err
 	}
+
+	log.Debug().
+		Str("src_path", newExePath).
+		Str("dst_path", currPath).
+		Msg("Updated exe path")
 
 	return nil
 }
@@ -447,7 +492,11 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", nil
 	}
 
-	tempDir, err := os.MkdirTemp("", "cre-rule-update")
+	log.Debug().
+		Str("path", configDir).
+		Msg("Config dir path")
+
+	tempDir, err := os.MkdirTemp(configDir, "cre-rule-update")
 	if err != nil {
 		return "", err
 	}
@@ -473,6 +522,10 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
+	log.Debug().
+		Str("path", newRulePath).
+		Msg("Temp updated rule path")
+
 	hb, err = downloadPackage(ctx, apiUrl, fullResp.RuleUrls.HashUrl, token, fullResp.RuleUrls.HashSize, pw, slowCheckTimeout, downloadTimeout)
 	if err != nil {
 		return "", err
@@ -483,6 +536,10 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
+	log.Debug().
+		Str("path", newRuleHashPath).
+		Msg("Temp updated rule hash path")
+
 	sb, err = downloadPackage(ctx, apiUrl, fullResp.RuleUrls.SigUrl, token, fullResp.RuleUrls.SigSize, pw, slowCheckTimeout, downloadTimeout)
 	if err != nil {
 		return "", err
@@ -492,6 +549,10 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 	if err = os.WriteFile(newRuleSigPath, sb, 0644); err != nil {
 		return "", err
 	}
+
+	log.Debug().
+		Str("path", newRuleSigPath).
+		Msg("Temp updated rule sig path")
 
 	block, _ := pem.Decode(publicRulesKeyPEM)
 	if block == nil {
@@ -535,6 +596,11 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 		return "", err
 	}
 
+	log.Debug().
+		Str("src_path", newRulePath).
+		Str("dst_path", updatedRulesPath).
+		Msg("Updated rule path")
+
 	baseHashName, err := utils.UrlBase(fullResp.RuleUrls.HashUrl)
 	if err != nil {
 		return "", err
@@ -543,6 +609,11 @@ func requestRuleUpdate(ctx context.Context, fullResp *RuleUpdateResponse, apiUrl
 	if err = utils.CopyFile(newRuleHashPath, filepath.Join(configDir, baseHashName)); err != nil {
 		return "", err
 	}
+
+	log.Debug().
+		Str("src_path", newRuleHashPath).
+		Str("dst_path", filepath.Join(configDir, baseHashName)).
+		Msg("Updated rule hash path")
 
 	return updatedRulesPath, nil
 }
