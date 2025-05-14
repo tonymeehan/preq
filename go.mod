@@ -30,7 +30,7 @@ require (
 require (
 	github.com/cqroot/prompt v0.9.4
 	github.com/fatih/color v1.18.0
-	github.com/prequel-dev/prequel-compiler v0.0.10
+	github.com/prequel-dev/prequel-compiler v0.0.11
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.20.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -47,6 +47,7 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/charmbracelet/bubbles v0.16.1 // indirect
 	github.com/charmbracelet/bubbletea v0.24.2 // indirect
