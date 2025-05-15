@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -32,7 +33,10 @@ import (
 
 type LogData = resolve.LogData
 
-const ramLimit = 512 << 20 // 512 MiB
+const (
+	ramLimit   = 512 << 20                // 512 MiB
+	futureMark = int64(math.MaxInt64) - 1 // Avoid future issues with MaxInt64 used as a flag
+)
 
 var (
 	ErrRuleNotFound      = errors.New("rule not found")
@@ -615,14 +619,15 @@ func (r *RuntimeT) _run(ctx context.Context, wg *sync.WaitGroup, sources []*LogD
 
 func (r *RuntimeT) _runSrc(ctx context.Context, wg *sync.WaitGroup, ld *LogData, matchers *RuleMatchersT, stop int64, lines *atomic.Int64) error {
 
-	type pairT struct {
+	type trioT struct {
 		matcher    matchCB
+		flusher    flushCB
 		compilerCb compiler.CallbackT
 	}
 
 	var (
 		srcType = ld.SrcType()
-		cbs     = make([]pairT, 0, len(matchers.eventSrc))
+		cbs     = make([]trioT, 0, len(matchers.eventSrc))
 	)
 
 	for ruleId, pe := range matchers.eventSrc {
@@ -637,14 +642,19 @@ func (r *RuntimeT) _runSrc(ctx context.Context, wg *sync.WaitGroup, ld *LogData,
 			Str("ruleId", ruleId).
 			Msg("Matching source")
 
-		cb, err := _makeMatchCb(srcType, matchers.match[ruleId])
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to make stdin callback")
-			return err
+		matcher := matchers.match[ruleId]
+
+		lm, ok := matcher.(lm.Matcher)
+		if !ok {
+			return errors.New("invalid matcher")
 		}
 
-		cbs = append(cbs, pairT{
+		cb := _bindMatchCb(srcType, lm)
+		fb := _bindFlushCB(srcType, lm)
+
+		cbs = append(cbs, trioT{
 			matcher:    cb,
+			flusher:    fb,
 			compilerCb: matchers.cb[ruleId],
 		})
 	}
@@ -673,22 +683,40 @@ func (r *RuntimeT) _runSrc(ctx context.Context, wg *sync.WaitGroup, ld *LogData,
 		// Use an atomic instead of calling tracker directly to decrease overhead.
 		lines.Add(1)
 
-		for _, pair := range cbs {
-			if msgHits := pair.matcher(entry); msgHits != nil {
+		for _, trio := range cbs {
+			if msgHits := trio.matcher(entry); msgHits != nil {
 				log.Info().
 					Interface("hits", msgHits).
 					Msg("Hits")
-				pair.compilerCb(ctx, *msgHits)
+				trio.compilerCb(ctx, *msgHits)
 			}
 		}
 
 		return false
 	}
 
+	finalFlush := func() {
+		for _, trio := range cbs {
+			if msgHits := trio.flusher(); msgHits != nil {
+				log.Info().
+					Interface("hits", msgHits).
+					Msg("Hits on final flush")
+				trio.compilerCb(ctx, *msgHits)
+			}
+		}
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		// Spin across the logs
 		_spinLogs(ld, scanCb, stop, tracker)
+
+		// Finally flush out any pending negative matches
+		finalFlush()
+
+		// Close the tracker
 		tracker.MarkAsDone()
 	}()
 
@@ -754,41 +782,44 @@ func _spinLogs(ld *LogData, scanF scanner.ScanFuncT, stop int64, tracker *progre
 }
 
 type matchCB func(entry entry.LogEntry) *matchz.HitsT
+type flushCB func() *matchz.HitsT
 
-func _makeMatchCb(src string, matcher any) (matchCB, error) {
-
-	mm, ok := matcher.(lm.Matcher)
-	if !ok {
-		return nil, errors.New("invalid matcher")
+func makeHitZ(src string, hits lm.Hits) *matchz.HitsT {
+	if hits.Cnt == 0 {
+		return nil
 	}
 
-	scanCb := func(entry entry.LogEntry) *matchz.HitsT {
+	log.Trace().Any("hits", hits).Msg("Hits")
 
+	msgHits := matchz.HitsT{
+		Entries: make([]matchz.EntryT, 0, len(hits.Logs)),
+	}
+
+	for _, line := range hits.Logs {
+		msgHits.Entries = append(msgHits.Entries, matchz.EntryT{
+			Timestamp: line.Timestamp,
+			Entry:     []byte(line.Line),
+		})
+	}
+
+	msgHits.Count = uint32(hits.Cnt)
+	msgHits.Entity.FileName = src
+
+	return &msgHits
+}
+
+func _bindMatchCb(src string, mm lm.Matcher) matchCB {
+	return func(entry entry.LogEntry) *matchz.HitsT {
 		hits := mm.Scan(entry)
-		if hits.Cnt == 0 {
-			return nil
-		}
-
-		log.Trace().Any("hits", hits).Msg("Hits")
-
-		msgHits := matchz.HitsT{
-			Entries: make([]matchz.EntryT, 0, len(hits.Logs)),
-		}
-
-		for _, line := range hits.Logs {
-			msgHits.Entries = append(msgHits.Entries, matchz.EntryT{
-				Timestamp: line.Timestamp,
-				Entry:     []byte(line.Line),
-			})
-		}
-
-		msgHits.Count = uint32(hits.Cnt)
-		msgHits.Entity.FileName = src
-
-		return &msgHits
+		return makeHitZ(src, hits)
 	}
+}
 
-	return scanCb, nil
+func _bindFlushCB(src string, mm lm.Matcher) flushCB {
+	return func() *matchz.HitsT {
+		hits := mm.Eval(futureMark)
+		return makeHitZ(src, hits)
+	}
 }
 
 type TrkRdr struct {
