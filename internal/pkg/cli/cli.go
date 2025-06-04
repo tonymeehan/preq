@@ -12,6 +12,7 @@ import (
 	"github.com/prequel-dev/preq/internal/pkg/engine"
 	"github.com/prequel-dev/preq/internal/pkg/resolve"
 	"github.com/prequel-dev/preq/internal/pkg/rules"
+	"github.com/prequel-dev/preq/internal/pkg/runbook"
 	"github.com/prequel-dev/preq/internal/pkg/timez"
 	"github.com/prequel-dev/preq/internal/pkg/utils"
 	"github.com/prequel-dev/preq/internal/pkg/ux"
@@ -20,6 +21,7 @@ import (
 )
 
 var Options struct {
+	Action        string `short:"a" help:"${actionHelp}"`
 	Disabled      bool   `short:"d" help:"${disabledHelp}"`
 	Generate      bool   `short:"g" help:"${generateHelp}"`
 	Cron          bool   `short:"j" help:"${cronHelp}"`
@@ -263,26 +265,20 @@ LOOP:
 		log.Debug().Msg("No CREs found")
 		return nil
 
-	case c.Notification.Type == ux.NotificationSlack:
+	case Options.Action != "":
+		log.Debug().Str("path", Options.Action).Msg("Running action")
 
-		log.Debug().Msgf("Posting Slack notification to %s", c.Notification.Webhook)
-
-		if err = report.PostSlackDetection(ctx, c.Notification.Webhook, Options.Name); err != nil {
-			log.Error().Err(err).Msg("Failed to post Slack notification")
+		report, err := report.CreateReport()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to create report")
 			ux.RulesError(err)
 			return err
 		}
 
-		if !Options.Quiet {
-
-			// Print reports to stdout when notifications are enabled
-			if err = report.PrintReport(); err != nil {
-				log.Error().Err(err).Msg("Failed to print report")
-				ux.RulesError(err)
-				return err
-			}
-
-			fmt.Fprintf(os.Stdout, "\nSent Slack notification\n")
+		if err := runbook.Runbook(ctx, Options.Action, report); err != nil {
+			log.Error().Err(err).Msg("Failed to run action")
+			ux.RulesError(err)
+			return err
 		}
 
 	case Options.Name == ux.OutputStdout:
