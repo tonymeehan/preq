@@ -121,6 +121,7 @@ func RootCmd(ctx context.Context, o *krewOptions) *cobra.Command {
 	}
 
 	// preq options
+	cmd.Flags().StringVarP(&cli.Options.Action, "action", "a", "", ux.HelpAction)
 	cmd.Flags().BoolVarP(&cli.Options.Disabled, "disabled", "d", false, ux.HelpDisabled)
 	cmd.Flags().BoolVarP(&cli.Options.Cron, "cronjob", "j", false, ux.HelpCron)
 	cmd.Flags().StringVarP(&cli.Options.Level, "level", "l", "", ux.HelpLevel)
