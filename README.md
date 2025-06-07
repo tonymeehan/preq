@@ -7,7 +7,6 @@
 [![Unit Tests](https://github.com/prequel-dev/cre/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/cre/actions/workflows/build.yml)
 [![Unit Tests](https://github.com/prequel-dev/preq/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/preq/actions/workflows/build.yml)
 [![Unit Tests](https://github.com/prequel-dev/prequel-compiler/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/prequel-compiler/actions/workflows/build.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-100.0%25-brightgreen)](https://github.com/prequel-dev/preq/actions/workflows/coverage.yml)
 
 ---
 
