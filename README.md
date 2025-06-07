@@ -4,15 +4,6 @@
 [![Unit Tests](https://github.com/prequel-dev/preq/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/preq/actions/workflows/build.yml)
 [![Unit Tests](https://github.com/prequel-dev/prequel-compiler/actions/workflows/build.yml/badge.svg)](https://github.com/prequel-dev/prequel-compiler/actions/workflows/build.yml)
 
-```
-██████╗ ██████╗ ███████╗ ██████╗ 
-██╔══██╗██╔══██╗██╔════╝██╔═══██╗
-██████╔╝██████╔╝█████╗  ██║   ██║
-██╔═══╝ ██╔══██╗██╔══╝  ██║▄▄ ██║
-██║     ██║  ██║███████╗╚██████╔╝
-╚═╝     ╚═╝  ╚═╝╚══════╝ ╚══▀▀═╝ 
-```
-                      
 `preq` (prounounced "preek") is a free and open community-driven reliability problem detector
 
 [Documentation](https://docs.prequel.dev) | [Slack](https://inviter.co/prequel) | [Playground](https://play.prequel.dev/) | [Mailing List](https://www.detect.sh)
@@ -24,6 +15,11 @@ Use `preq` to:
 - detect the latest bugs, misconfigurations, anti-patterns, and known issues from a community of practitioners
 - provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
 - hunt for new problems in distributed systems
+
+preq is powered by Common Reliability Enumerations (CREs) that are contributed by the community and Prequel's Reliability Research Team. Reliability intelligence helps teams see a broad range of problems earlier, so they can prioritize, pinpoint, and reduce the risk of outages.
+Play
+
+Try [the playground](https://play.prequel.dev) with schema validation. It uses WebAssembly and runs 100% in your browser. No data leaves it!
 
 ## Install
 
