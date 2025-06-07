@@ -16,18 +16,15 @@ Use `preq` to:
 - provide engineers, on-call support, and SRE agents with impact and community recommended mitigations
 - hunt for new problems in distributed systems
 
-preq is powered by Common Reliability Enumerations (CREs) that are contributed by the community and Prequel's Reliability Research Team. Reliability intelligence helps teams see a broad range of problems earlier, so they can prioritize, pinpoint, and reduce the risk of outages.
-Play
-
-Try [the playground](https://play.prequel.dev) with schema validation. It uses WebAssembly and runs 100% in your browser. No data leaves it!
+`preq` is powered by [Common Reliability Enumerations (CREs)](https://github.com/prequel-dev/cre) that are contributed by the community and Prequel's Reliability Research Team. Reliability intelligence helps teams see a broad range of problems earlier, so they can prioritize, pinpoint, and reduce the risk of outages.
 
 ## Install
 
-See https://docs.prequel.dev/install.
+Download the [latest release](https://github.com/prequel-dev/preq/releases) for Linux (amd64), macOS (amd64 and arm64), and Windows (amd64). No configuration is necessary to start using preq.
+
+See https://docs.prequel.dev/install for more information.
 
 ## Overview
-
-`preq` uses Common Reliability Enumerations (CREs) created by the problem detection community and Prequel's Reliability Research Team to detect reliability problems. Reliability Intelligence from CREs helps teams see the most problems and see them first so they can prioritize, pinpoint, and act to mitigate outages.
 
 `preq` is powered by a rules engine that performs distributed matching and correlation of sequences of events across logs, metrics, traces, and other data sources to detect reliability problems. CREs provides accurate and timely context for a human or SRE agent to take action on problems.
 
@@ -76,3 +73,5 @@ rule:
     negate:
       - SIGTERM received - shutting down
 ```
+
+## Running
