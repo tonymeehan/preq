@@ -1,4 +1,5 @@
 # preq
+![Coverage](https://img.shields.io/badge/Coverage-19.6%25-red)
 
 `preq` (prounounced "preek") is a free and open community-driven reliability problem detector
 
