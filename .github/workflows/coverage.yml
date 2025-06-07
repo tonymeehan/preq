@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   repository_dispatch:
     types: [trigger-workflow]
-  pull_request:
-    branches:
-      - main
 
 jobs:
   test:
