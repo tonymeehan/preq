@@ -12,7 +12,7 @@ import (
 	// https://krew.sigs.k8s.io/docs/developer-guide/develop/best-practices/
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/prequel-dev/preq/internal/pkg/cli"
+	"github.com/prequel-dev/preq/pkg/cli"
 	"github.com/prequel-dev/preq/internal/pkg/logs"
 	"github.com/prequel-dev/preq/internal/pkg/ux"
 

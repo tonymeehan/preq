@@ -7,7 +7,7 @@ import (
         "testing"
 
         krewpkg "github.com/prequel-dev/preq/cmd/plugin/krew"
-        "github.com/prequel-dev/preq/internal/pkg/cli"
+        "github.com/prequel-dev/preq/pkg/cli"
         "github.com/google/go-cmp/cmp"
         "github.com/spf13/pflag"
         "k8s.io/cli-runtime/pkg/genericclioptions"

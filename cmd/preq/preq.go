@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/prequel-dev/preq/internal/pkg/cli"
+	"github.com/prequel-dev/preq/pkg/cli"
 	"github.com/prequel-dev/preq/internal/pkg/logs"
 	"github.com/prequel-dev/preq/internal/pkg/sigs"
 	"github.com/prequel-dev/preq/internal/pkg/ux"
